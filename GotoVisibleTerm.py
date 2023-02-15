@@ -4,23 +4,24 @@ import sublime_plugin
 
 class GotoVisibleTermCommand(sublime_plugin.TextCommand):
 
+    KEY_ID = "GotoVisibleTerm"
+
     def run(self, edit):
 
         def focus_symbol(wordrgn):
-            nonlocal KEY_ID, vw
+            nonlocal vw
             vw.add_regions(KEY_ID, [wordrgn], 
                                   flags=sublime.DRAW_NO_FILL,
                                   scope="invalid",
                                   icon="circle")
 
         def commit_symbol(wordrgns, idx):
-            nonlocal KEY_ID, vw
+            nonlocal vw
             vw.erase_regions(KEY_ID)
             if idx >= 0:
                 vw.sel().clear()
                 vw.sel().add(wordrgns[idx])
         
-        KEY_ID = "GotoVisibleTerm"
         punctset = frozenset("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
         vw = self.view
         rgns = (rgn_scp[0]  for rgn_scp in 
