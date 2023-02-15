@@ -7,15 +7,14 @@ class GotoVisibleTermCommand(sublime_plugin.TextCommand):
     def run(self, edit):
 
         def focus_symbol(wordrgn):
-            nonlocal KEY_ID
-            self.view.add_regions(KEY_ID, [wordrgn], 
+            nonlocal KEY_ID, vw
+            vw.add_regions(KEY_ID, [wordrgn], 
                                   flags=sublime.DRAW_NO_FILL,
                                   scope="invalid",
                                   icon="circle")
 
         def commit_symbol(wordrgns, idx):
-            nonlocal KEY_ID
-            vw = self.view
+            nonlocal KEY_ID, vw
             vw.erase_regions(KEY_ID)
             if idx >= 0:
                 vw.sel().clear()
