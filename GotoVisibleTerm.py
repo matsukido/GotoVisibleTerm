@@ -15,12 +15,16 @@ class GotoVisibleTermCommand(sublime_plugin.TextCommand):
                                   scope="invalid",
                                   icon="circle")
 
-        def commit_symbol(wordrgns, idx):
+        def commit_symbol(wordrgns, idx, event):
             nonlocal vw
             vw.erase_regions(KEY_ID)
             if idx >= 0:
-                vw.sel().clear()
-                vw.sel().add(wordrgns[idx])
+                if event["modifier_keys"].get("shift", False):
+                    rgn = wordrgns[idx].cover(vw.sel()[0])
+                    vw.sel().add(rgn)
+                else:
+                    vw.sel().clear()
+                    vw.sel().add(wordrgns[idx])
         
         punctset = frozenset("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
         vw = self.view
@@ -37,6 +41,7 @@ class GotoVisibleTermCommand(sublime_plugin.TextCommand):
 
         vw.window().show_quick_panel(words, 
                 on_highlight=lambda idx:focus_symbol(wordrgns[idx]),
-                on_select=lambda idx:commit_symbol(wordrgns, idx),
+                on_select=lambda idx, evt:commit_symbol(wordrgns, idx, evt),
+                flags=sublime.WANT_EVENT,
                 placeholder="=")
 
