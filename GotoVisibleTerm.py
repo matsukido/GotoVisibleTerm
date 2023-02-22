@@ -1,6 +1,5 @@
 import sublime
 import sublime_plugin
-import html
 
 
 class GotoVisibleTermCommand(sublime_plugin.TextCommand):
@@ -9,51 +8,40 @@ class GotoVisibleTermCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
 
-        def focus_symbol(wordrgn, word):
+        def focus_symbol(wordrgn):
             nonlocal vw
-            vw.add_regions(key=KEY_ID, 
-                           regions=[wordrgn], 
-                           flags=sublime.DRAW_NO_FILL,
-                           scope="invalid",
-                           icon="circle",
-                           annotations=[word],
-                           annotation_color="#aa0")
+            vw.add_regions(self.KEY_ID, [wordrgn], 
+                                  flags=sublime.DRAW_NO_FILL,
+                                  scope="invalid",
+                                  icon="circle")
 
         def commit_symbol(wordrgns, idx, event):
             nonlocal vw
-            vw.erase_regions(KEY_ID)
-            if idx < 0:
-                return
-
-            rgn = wordrgns[idx]
-            if event["modifier_keys"].get("shift", False):
-                rgn = rgn.cover(vw.sel()[0])
-                if wordrgns[idx] < vw.sel()[0]:
-                    rgn.a, rgn.b = rgn.b, rgn.a
-
-            vw.sel().clear()
-            vw.sel().add(rgn)
+            vw.erase_regions(self.KEY_ID)
+            if idx >= 0:
+                if event["modifier_keys"].get("shift", False):
+                    rgn = wordrgns[idx].cover(vw.sel()[0])
+                    vw.sel().add(rgn)
+                else:
+                    vw.sel().clear()
+                    vw.sel().add(wordrgns[idx])
         
-        vw = self.view
         punctset = frozenset("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
+        vw = self.view
         rgns = (rgn_scp[0]  for rgn_scp in 
                    vw.extract_tokens_with_scopes(vw.visible_region()))
 
+        words = []
         wordrgns = []
-        qpitems = []
         for rgn in rgns:
             word = vw.substr(rgn)
-            if set(word) <= punctset or word.isspace():
-                continue
+            if not (set(word) <= punctset or word.isspace()):
+                words.append(word)
+                wordrgns.append(rgn)
 
-            wordrgns.append(rgn)
-            qpitems.append(sublime.QuickPanelItem(
-                      trigger=word, 
-                      annotation=html.escape(vw.substr(vw.line(rgn)), False)))
-
-        vw.window().show_quick_panel(
-                items=qpitems, 
-                on_highlight=lambda idx: focus_symbol(wordrgns[idx], qpitems[idx].trigger),
-                on_select=lambda idx, evt: commit_symbol(wordrgns, idx, evt),
+        vw.window().show_quick_panel(words, 
+                on_highlight=lambda idx:focus_symbol(wordrgns[idx]),
+                on_select=lambda idx, evt:commit_symbol(wordrgns, idx, evt),
                 flags=sublime.WANT_EVENT,
                 placeholder="=")
+
