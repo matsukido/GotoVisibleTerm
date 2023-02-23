@@ -34,6 +34,16 @@ class GotoVisibleTermCommand(sublime_plugin.TextCommand):
             
             elif event["modifier_keys"].get("ctrl", False):
                 pass
+            
+            elif event["modifier_keys"].get("alt", False):
+                emergency_rgn = sublime.Region(vw.sel()[0].b)
+                try:
+                    vw.sel().subtract(rgn)
+                    vw.sel()[0]
+                except IndexError:
+                    vw.sel().add(emergency_rgn)
+                return
+
             else:
                 vw.sel().clear()
 
@@ -44,6 +54,8 @@ class GotoVisibleTermCommand(sublime_plugin.TextCommand):
         rgns = (rgn_scp[0]  for rgn_scp in 
                    vw.extract_tokens_with_scopes(vw.visible_region()))
 
+        index = -1
+        ref_begin = vw.sel()[0].begin()
         wordrgns = []
         qpitems = []
         for rgn in rgns:
@@ -51,6 +63,7 @@ class GotoVisibleTermCommand(sublime_plugin.TextCommand):
             if set(word) <= punctset or word.isspace():
                 continue
 
+            index += (1 if rgn.begin() < ref_begin else 0)
             wordrgns.append(rgn)
             qpitems.append(sublime.QuickPanelItem(
                       trigger=word, 
@@ -61,4 +74,5 @@ class GotoVisibleTermCommand(sublime_plugin.TextCommand):
                 on_highlight=lambda idx: focus_term(wordrgns[idx], qpitems[idx].trigger),
                 on_select=lambda idx, evt: commit_term(wordrgns, idx, evt),
                 flags=sublime.WANT_EVENT,
+                selected_index=index,
                 placeholder="=")
