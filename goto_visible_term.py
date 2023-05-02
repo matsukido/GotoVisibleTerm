@@ -1,6 +1,17 @@
 import sublime
 import sublime_plugin
 import html
+import itertools as itools
+
+
+def invert_region(region, regions):
+    flat = itools.chain.from_iterable((a - 1, b + 1)  for a, b in regions)
+    start = itools.dropwhile(lambda pt: pt < region.a, flat)
+    toend = itools.takewhile(lambda pt: pt < region.b, start)
+    flatten = itools.chain([region.a], toend)
+    tpls = itools.zip_longest(flatten, flatten, fillvalue=region.b)
+    
+    return itools.starmap(sublime.Region, tpls)
 
 
 class GotoVisibleTermCommand(sublime_plugin.TextCommand):
@@ -41,12 +52,14 @@ class GotoVisibleTermCommand(sublime_plugin.TextCommand):
         
         vw = self.view
         punctset = frozenset("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
-        rgns = (rgn_scp[0]  for rgn_scp in 
-                   vw.extract_tokens_with_scopes(vw.visible_region()))
+
+        rgns = invert_region(vw.visible_region(), vw.folded_regions())
+        rgn_scp = map(vw.extract_tokens_with_scopes, rgns)
+        term_rgns, _ = zip(*itools.chain.from_iterable(rgn_scp))
 
         wordrgns = []
         qpitems = []
-        for rgn in rgns:
+        for rgn in term_rgns:
             word = vw.substr(rgn)
             if set(word) <= punctset or word.isspace():
                 continue
