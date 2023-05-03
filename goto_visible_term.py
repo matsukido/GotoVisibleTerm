@@ -5,13 +5,12 @@ import itertools as itools
 
 
 def invert_region(region, regions):
-    flat = itools.chain.from_iterable((a - 1, b + 1)  for a, b in regions)
-    start = itools.dropwhile(lambda pt: pt < region.a, flat)
-    toend = itools.takewhile(lambda pt: pt < region.b, start)
-    flatten = itools.chain([region.a], toend)
-    tpls = itools.zip_longest(flatten, flatten, fillvalue=region.b)
-    
-    return itools.starmap(sublime.Region, tpls)
+    rgns = (region.intersection(rgn)  for rgn in regions)
+    pts = itools.chain.from_iterable(rgn  for rgn in rgns if not rgn.empty())
+    flatten = itools.chain([region.a], pts, [region.b])
+    mprgns = itools.starmap(sublime.Region, zip(flatten, flatten))
+
+    return (rgn  for rgn in mprgns if rgn.a < rgn.b)
 
 
 class GotoVisibleTermCommand(sublime_plugin.TextCommand):
