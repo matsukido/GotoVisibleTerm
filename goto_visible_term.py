@@ -5,8 +5,8 @@ import itertools as itools
 
 
 def invert_region(region, regions):
-    rgns = (region.intersection(rgn)  for rgn in regions)
-    pts = itools.chain.from_iterable(rgn  for rgn in rgns if not rgn.empty())
+    rgns = (region.intersection(rgn)  for rgn in regions if region.intersects(rgn))
+    pts = itools.chain.from_iterable(rgns)
     flatten = itools.chain([region.a], pts, [region.b])
     mprgns = itools.starmap(sublime.Region, zip(flatten, flatten))
 
