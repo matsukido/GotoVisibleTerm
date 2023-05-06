@@ -6,11 +6,10 @@ import itertools as itools
 
 def invert_region(region, regions):
     rgns = (region.intersection(rgn)  for rgn in regions if region.intersects(rgn))
-    pts = itools.chain.from_iterable(rgns)
-    flatten = itools.chain([region.a], pts, [region.b])
-    mprgns = itools.starmap(sublime.Region, zip(flatten, flatten))
+    flatten = itools.chain([region.a], itools.chain(*rgns), [region.b])
+    invrgns = itools.starmap(sublime.Region, zip(flatten, flatten))
 
-    return (rgn  for rgn in mprgns if rgn.a < rgn.b)
+    return (rgn  for rgn in invrgns if rgn.a < rgn.b)
 
 
 class GotoVisibleTermCommand(sublime_plugin.TextCommand):
